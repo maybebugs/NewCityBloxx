@@ -1,0 +1,17 @@
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at center,#2a3a52 0%,#0d121b 100%);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#screen{background:#000;touch-action:none;image-rendering:auto}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#ddd;font:16px sans-serif;background:#111}
+#overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);font-family:sans-serif}
+#overlay .box{background:#fff;border-radius:8px;padding:18px 22px;min-width:220px;text-align:center}
+#overlay h2{margin:0 0 12px;font-size:16px}
+#overlay input{font-size:18px;width:100%;box-sizing:border-box;padding:6px;text-align:center}
+#overlay .row{margin-top:12px;display:flex;gap:8px;justify-content:center}
+#overlay button{font-size:16px;padding:6px 18px}
+#screen{box-shadow:0 0 40px rgba(0,0,0,.6);border-radius:2px}
+#tools{position:fixed;top:8px;right:8px;display:flex;gap:6px;z-index:5;opacity:.55;transition:opacity .2s}
+#tools:hover{opacity:1}
+#tools button{width:34px;height:34px;border:0;border-radius:8px;background:rgba(20,28,40,.75);color:#fff;font-size:17px;cursor:pointer;padding:0}
+#tools button.off{opacity:.45}
+#toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(20,28,40,.9);color:#fff;font:14px sans-serif;padding:8px 14px;border-radius:8px;z-index:9;display:none}
+@media (pointer:coarse){#tools button{width:44px;height:44px;font-size:21px}#tools{opacity:.8}}

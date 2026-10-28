@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>City Bloxx</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage"><canvas id="screen" width="240" height="320"></canvas></div>
+<div id="tools"><button id="bBack" title="Back (Esc)">↩️</button><button id="bAdd" title="Add custom top models (.obj + .mtl + textures)">📦</button><button id="bFull" title="Fullscreen (F)">⛶</button><button id="bSnd" title="Sound (M)">🔊</button><button id="bSm" title="Smooth sprites (P)">✨</button></div>
+<input id="fileIn" type="file" multiple accept=".obj,.mtl,.png,.jpg,.jpeg,.gif,.properties" style="display:none">
+<div id="loading"><div>Loading… <span id="pct">0%</span></div></div>
+<div id="overlay"></div>
+<div id="toast"></div>
+<script src="assets.js"></script>
+<script src="js/engine/util.js"></script>
+<script src="js/engine/io.js"></script>
+<script src="js/engine/assets.js"></script>
+<script src="js/engine/graphics.js"></script>
+<script src="js/engine/g3d.js"></script>
+<script src="js/engine/canvas.js"></script>
+<script src="js/engine/midi.js"></script>
+<script src="js/game/Storage.js"></script>
+<script src="js/game/Lang.js"></script>
+<script src="js/game/Resources.js"></script>
+<script src="js/game/Vibra.js"></script>
+<script src="js/game/SoundPlayer.js"></script>
+<script src="js/game/Mesh3D.js"></script>
+<script src="js/game/CustomTops.js"></script>
+<script src="js/game/Renderer3D.js"></script>
+<script src="js/game/Ui.js"></script>
+<script src="js/game/HighScores.js"></script>
+<script src="js/game/CityMode.js"></script>
+<script src="js/game/GameMIDlet.js"></script>
+<script src="js/game/House.js"></script>
+<script src="js/game/MenuController.js"></script>
+<script src="js/game/GameCanvas.js"></script>
+<script src="js/game/StoreScreen.js"></script>
+<script src="js/game/PlatformFactory.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
