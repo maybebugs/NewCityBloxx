@@ -1,5 +1,6 @@
 class CityMode {
   static init() {
+    CityMode.loadMapPref();
     CityMode.font = House.getGameFont();
     CityMode.hintLinesVisible = 51;
     CityMode.hintLinesVisible -= 2;
@@ -317,6 +318,7 @@ class CityMode {
     let blendedColor = (((((((c1R + ((((Math.imul(((c2R - c1R)), blink)) / 400) | 0)))) << 16)) | ((((c1G + ((((Math.imul(((c2G - c1G)), blink)) / 400) | 0)))) << 8)))) | ((((((Math.imul(blink, ((c2B - c1B)))) / 400) | 0)) + c1B)));
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
+        if (CityMode.isBlocked(c, r)) { CityMode.paintTerrain(g, gridOriginX + 5 + Math.imul(c, 34), gridOriginY + 5 + Math.imul(r, 34), CityMode.mapChar(c, r)); continue; }
         let colSec = CityMode.tierColorsSecondary[CityMode.unlockedBuildingTier];
         let colPri = CityMode.tierColorsPrimary[CityMode.unlockedBuildingTier];
         if (((((CityMode.cellLevels[((Math.imul(r, 5)) + c)] >= targetTier) && !CityMode.placementInProgress) && (CityMode.placementResultTimer < 0)) && (CityMode.selectedBuilding <= CityMode.unlockedBuildingTier)) && (((CityMode.placeDelay < 0) || (CityMode.phase !== 1)))) {
@@ -374,13 +376,13 @@ class CityMode {
     if (CityMode.gridTops) return;
     CityMode.gridTops = {};
     try {
-      const r = JSON.parse(localStorage.getItem('citybloxx.gridtops') || '{}');
+      const r = JSON.parse(localStorage.getItem('citybloxx.gridtops' + (CityMode.mapId ? '_m' + CityMode.mapId : '')) || '{}');
       CityMode.gridTops = r.cells || {};
       CityMode.pieceTop = r.piece || null;
     } catch (e) {}
   }
   static saveGridTops() {
-    try { localStorage.setItem('citybloxx.gridtops', JSON.stringify({ cells: CityMode.gridTops, piece: CityMode.pieceTop || null })); } catch (e) {}
+    try { localStorage.setItem('citybloxx.gridtops' + (CityMode.mapId ? '_m' + CityMode.mapId : ''), JSON.stringify({ cells: CityMode.gridTops, piece: CityMode.pieceTop || null })); } catch (e) {}
   }
   /** Icon for a placed tower in a cell (null = draw the normal sprite). Only towers whose custom top landed (variant 1/2). */
   static topIconForCell(cellIdx) {
@@ -605,6 +607,7 @@ class CityMode {
     CityMode.launchDelay = -1;
     CityMode.placementResultTimer = -1;
     CityMode.loadState();
+    CityMode.fixCursor();
     CityMode.updateUnlocks();
     CityMode.recalculateSynergies();
     CityMode.selectedBuilding = 0;
@@ -898,6 +901,8 @@ class CityMode {
           CityMode.slideY = 0;
           CityMode.slideTimer = 150;
         }
+      } else if (CityMode.keyFire && CityMode.cursorCol >= 0 && CityMode.isBlocked(CityMode.cursorCol, CityMode.cursorRow)) {
+        /* terrain: cannot build here */
       } else if (CityMode.keyFire && ((((CityMode.cursorCol < 0) || (CityMode.cellLevels[((Math.imul(CityMode.cursorRow, 5)) + CityMode.cursorCol)] >= (CityMode.pieceType - 1))) || CityMode.cheatActive))) {
         CityMode.placementInProgress = true;
         CityMode.placeAnimTimer = 3000;
@@ -1187,11 +1192,12 @@ class CityMode {
         if (iArr.indexOf(5) >= 0 && new Set(Array.from(iArr).filter((t) => t > 0 && t <= 5)).size >= 3) {
           i3 = 5;   // cyan tower plot: pink neighbour + at least two other building types
         }
+        if (CityMode.isBlocked(i2, i)) { CityMode.cellLevels[((Math.imul(i, 5)) + i2)] = -1; continue; }
         CityMode.cellLevels[((Math.imul(i, 5)) + i2)] = i3;
         if (i3 > CityMode.highestTierUnlocked) {
           CityMode.highestTierUnlocked = i3;
         }
-        if (CityMode.grid[((Math.imul((((Math.imul(i, 5)) + i2)), 3)) + 0)] === 0) {
+        if (CityMode.grid[((Math.imul((((Math.imul(i, 5)) + i2)), 3)) + 0)] === 0 && !CityMode.isBlocked(i2, i)) {
           CityMode.buildingHintPending = false;
         }
       }
@@ -1258,7 +1264,7 @@ class CityMode {
   }
   static loadState() {
     try {
-      let in_ = Storage.openRead("citymode");
+      let in_ = Storage.openRead(CityMode.saveName());
       if (in_ == null) {
         return;
       }
@@ -1333,7 +1339,7 @@ class CityMode {
       return;
     }
     try {
-      let out = Storage.openWrite("citymode");
+      let out = Storage.openWrite(CityMode.saveName());
       out.writeInt(House.gameMode);
       out.writeInt(House.screenState);
       out.writeInt(CityMode.phase);
@@ -1445,6 +1451,7 @@ class CityMode {
       let col = ((((px - gridX)) / 34) | 0);
       let row = ((((py - gridY)) / 34) | 0);
       if ((((col >= 0) && (col < 5)) && (row >= 0)) && (row < 5)) {
+        if (CityMode.isBlocked(col, row)) { return true; }
         if ((CityMode.cursorCol === col) && (CityMode.cursorRow === row)) {
           CityMode.keyFire = true;
         } else {

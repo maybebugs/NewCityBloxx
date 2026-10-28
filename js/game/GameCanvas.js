@@ -170,6 +170,7 @@ run: () => {
     }
   }
   pointerPressed(pointerX, pointerY) {
+    if (CityMode.mapBarPointer && CityMode.mapBarPointer(pointerX, pointerY)) return;
     if (pointerY >= (GameMIDlet.screenHeight - 26)) {
       if (pointerX < ((GameMIDlet.screenWidth / 3) | 0)) {
         this.keyPressed(-6);
