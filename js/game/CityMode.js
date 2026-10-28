@@ -85,12 +85,16 @@ class CityMode {
     CityMode.pieceType = cellX;
     CityMode.pieceValue = cellY;
     CityMode.pieceVariant = buildingTier;
+    CityMode.loadGridTops();
+    CityMode.pieceTop = (buildingTier >= 1) ? CustomTops.equippedKeyForType(cellX) : null;
+    CityMode.saveGridTops();
     CityMode.cursorCol = 2;
     CityMode.cursorRow = 2;
     CityMode.placeDelay = 700;
     CityMode.placeTimer = 0;
     CityMode.cursorActive = true;
     if (CityMode.cheatActive && (cellY === 0)) {
+      CityMode.pieceTop = null;
       CityMode.randomizeBuildingStats();
     }
     if (!CityMode.tutorialShown[3]) {
@@ -365,6 +369,34 @@ class CityMode {
       }
     }
   }
+  /** Per-tower custom tops: cell -> {k: top key, t: type, v: value}; persisted separately from the binary save. */
+  static loadGridTops() {
+    if (CityMode.gridTops) return;
+    CityMode.gridTops = {};
+    try {
+      const r = JSON.parse(localStorage.getItem('citybloxx.gridtops') || '{}');
+      CityMode.gridTops = r.cells || {};
+      CityMode.pieceTop = r.piece || null;
+    } catch (e) {}
+  }
+  static saveGridTops() {
+    try { localStorage.setItem('citybloxx.gridtops', JSON.stringify({ cells: CityMode.gridTops, piece: CityMode.pieceTop || null })); } catch (e) {}
+  }
+  /** Icon for a placed tower in a cell (null = draw the normal sprite). Only towers whose custom top landed (variant 1/2). */
+  static topIconForCell(cellIdx) {
+    CityMode.loadGridTops();
+    const t = CityMode.grid[cellIdx * 3], v = CityMode.grid[cellIdx * 3 + 1], var_ = CityMode.grid[cellIdx * 3 + 2];
+    const e = CityMode.gridTops[cellIdx];
+    if (!e || t === 0 || e.t !== t || e.v !== v || var_ < 1) return null;
+    return CustomTops.iconForKey(t, e.k, var_ === 2);
+  }
+  /** Draws the tower's own flat base block (frame 0), then the custom top's icon on its square top face. */
+  static paintTopIcon(g, icon, sprite, type, drawX, drawY, frameWidth, frameHeight) {
+    g.setClip(drawX, drawY, frameWidth, frameHeight);
+    g.drawImage(sprite, drawX, drawY, 20);
+    const f = CustomTops.FACE[type - 1];
+    g.drawImage(icon, drawX + f[1], drawY + f[2], 20);
+  }
   static paintPlacedBuildings(g, gridOriginX, gridOriginY) {
     for (let cellIdx = 0; cellIdx < 25; cellIdx++) {
       let bType = CityMode.grid[((Math.imul(cellIdx, 3)) + 0)];
@@ -375,7 +407,12 @@ class CityMode {
         let drawX = (((gridOriginX + 8)) + (Math.imul(((cellIdx % 5)), 34)));
         let drawY = (((((gridOriginY + 29)) + (Math.imul((((cellIdx / 5) | 0)), 34)))) - frameHeight);
         g.setClip(drawX, drawY, frameWidth, frameHeight);
-        g.drawImage(CityMode.buildingSprites[(bType - 1)], (drawX - (Math.imul(frameWidth, bVariant))), drawY, 20);
+        const topIcon = CityMode.topIconForCell(cellIdx);
+        if (topIcon) {
+          CityMode.paintTopIcon(g, topIcon, CityMode.buildingSprites[(bType - 1)], bType, drawX, drawY, frameWidth, frameHeight);
+        } else {
+          g.drawImage(CityMode.buildingSprites[(bType - 1)], (drawX - (Math.imul(frameWidth, bVariant))), drawY, 20);
+        }
       }
     }
     g.setClip(0, 0, GameMIDlet.screenWidth, GameMIDlet.screenHeight);
@@ -466,7 +503,13 @@ class CityMode {
       let pieceHeight = CityMode.buildingSprites[(CityMode.pieceType - 1)].getHeight();
       let bDrawY = (drawY - pieceHeight);
       g.setClip(drawX, bDrawY, pieceWidth, pieceHeight);
-      g.drawImage(CityMode.buildingSprites[(CityMode.pieceType - 1)], (drawX - (Math.imul(CityMode.pieceVariant, pieceWidth))), bDrawY, 20);
+      CityMode.loadGridTops();
+      const pIcon = (CityMode.pieceVariant >= 1 && CityMode.pieceTop) ? CustomTops.iconForKey(CityMode.pieceType, CityMode.pieceTop, CityMode.pieceVariant === 2) : null;
+      if (pIcon) {
+        CityMode.paintTopIcon(g, pIcon, CityMode.buildingSprites[(CityMode.pieceType - 1)], CityMode.pieceType, drawX, bDrawY, pieceWidth, pieceHeight);
+      } else {
+        g.drawImage(CityMode.buildingSprites[(CityMode.pieceType - 1)], (drawX - (Math.imul(CityMode.pieceVariant, pieceWidth))), bDrawY, 20);
+      }
     }
     g.setClip(0, 0, GameMIDlet.screenWidth, GameMIDlet.screenHeight);
   }
@@ -628,6 +671,13 @@ class CityMode {
         CityMode.grid[((Math.imul((((Math.imul(CityMode.cursorRow, 5)) + CityMode.cursorCol)), 3)) + 0)] = CityMode.pieceType;
         CityMode.grid[((Math.imul((((Math.imul(CityMode.cursorRow, 5)) + CityMode.cursorCol)), 3)) + 1)] = CityMode.pieceValue;
         CityMode.grid[((Math.imul((((Math.imul(CityMode.cursorRow, 5)) + CityMode.cursorCol)), 3)) + 2)] = CityMode.pieceVariant;
+        {
+          const ci = (CityMode.cursorRow * 5) + CityMode.cursorCol;
+          CityMode.loadGridTops();
+          if (CityMode.pieceTop && CityMode.pieceVariant >= 1) CityMode.gridTops[ci] = { k: CityMode.pieceTop, t: CityMode.pieceType, v: CityMode.pieceValue };
+          else delete CityMode.gridTops[ci];
+          CityMode.saveGridTops();
+        }
         CityMode.saveState();
         CityMode.updateUnlocks();
         active = false;
@@ -955,6 +1005,9 @@ class CityMode {
     }
     CityMode.buildingSprites[4] = Resources.getImage(CityMode.PINK_SPRITE_RESOURCE);
     CityMode.buildingSprites[CityMode.SHADOW_SPRITE] = Resources.getImage(29);
+    CityMode.loadGridTops();
+    for (let t = 1; t <= 5; t++) CustomTops.iconForKey(t, CustomTops.equippedKeyForType(t));   // generate icons at start
+    for (const c in CityMode.gridTops) CustomTops.iconForKey(CityMode.gridTops[c].t, CityMode.gridTops[c].k);
     CityMode.tileEffectFrames = Resources.getImage(30);
     if (!House.updateLoadingProgress(40)) {
       return false;
@@ -1379,6 +1432,8 @@ CityMode.$clinit = function () {
   CityMode.pieceType = 0;
   CityMode.pieceValue = 0;
   CityMode.pieceVariant = 0;
+  CityMode.gridTops = null;
+  CityMode.pieceTop = null;
   CityMode.slideX = 0;
   CityMode.grid = null;
   CityMode.animTick = 0;

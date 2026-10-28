@@ -80,6 +80,8 @@ class CustomTops {
 
   static reloadAll() {
     CustomTops.meshCache.clear();
+    CustomTops.iconCache.clear();
+    CustomTops.goldTex.clear();
     Model.clearFileCache();
     CustomTops.rescan();
   }
@@ -161,14 +163,144 @@ class CustomTops {
     return null;
   }
 
-  static fileMesh(file, preview) {
-    const key = (preview ? 'p:' : 'g:') + file;
+  /** Box-downsample the hi-res render to S x S with hard alpha, richer posterised colours and a 1px dark outline. */
+  static pixelate(src, S, SS) {
+    const BS = S * SS;
+    const sd = src.getContext('2d').getImageData(0, 0, BS, BS).data;
+    const px = new Array(S * S).fill(null);
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+      let r = 0, gg = 0, bb = 0, a = 0;
+      for (let j = 0; j < SS; j++) for (let i = 0; i < SS; i++) {
+        const k = (((y * SS + j) * BS) + (x * SS + i)) * 4, al = sd[k + 3];
+        if (al > 0) { r += sd[k]; gg += sd[k + 1]; bb += sd[k + 2]; a++; }
+      }
+      if (a >= SS * SS * 0.45) {
+        r /= a; gg /= a; bb /= a;
+        // saturation + contrast boost, then posterise to a limited, game-like palette
+        const l = 0.3 * r + 0.59 * gg + 0.11 * bb;
+        const f = (v) => { v = l + (v - l) * 1.35; v = (v - 128) * 1.18 + 128 + 6; return Math.max(0, Math.min(255, Math.round(v / 28) * 28)); };
+        px[y * S + x] = [f(r), f(gg), f(bb)];
+      }
+    }
+    const out = document.createElement('canvas'); out.width = S; out.height = S;
+    const ctx = out.getContext('2d'), id = ctx.createImageData(S, S), d = id.data;
+    const at = (x, y) => (x < 0 || y < 0 || x >= S || y >= S) ? null : px[y * S + x];
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+      const p = px[y * S + x], k = (y * S + x) * 4;
+      if (p) {
+        let c = p;
+        const up = at(x, y - 1), lf = at(x - 1, y);
+        if ((!up || !lf) && !(up && lf)) c = [Math.min(255, p[0] + 40), Math.min(255, p[1] + 40), Math.min(255, p[2] + 40)];   // lit top-left rim
+        d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
+      } else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) {
+        d[k] = 28; d[k + 1] = 20; d[k + 2] = 44; d[k + 3] = 255;     // dark outline like the block sprites
+      }
+    }
+    ctx.putImageData(id, 0, 0);
+    return Image.fromCanvas(out);
+  }
+
+  /** Key of the top currently equipped on a tower type (1..5), or null when it is the default top. */
+  static equippedKeyForType(type) {
+    const slot = CustomTops.TYPES.indexOf(type);
+    if (slot < 0) return null;
+    const o = CustomTops.getAssigned(slot);
+    return o.kind === 0 ? null : o.key();
+  }
+
+  /** 22x22 straight top-down icon (cached) of the top with this key for a tower type (1..5), or null. */
+  static iconForKey(type, key, gold) {
+    const slot = CustomTops.TYPES.indexOf(type);
+    if (slot < 0 || !key) return null;
+    const ck = slot + '|' + key + (gold ? '|gold' : '');
+    if (CustomTops.iconCache.has(ck)) return CustomTops.iconCache.get(ck);
+    if (CustomTops.options_.length === 0) CustomTops.rescan();
+    const o = CustomTops.options_.find((x) => x.key() === key);
+    let img = null;
+    const mesh = (o && o.kind !== 0) ? ((gold && o.kind === 2) ? CustomTops.fileMesh(o.file, true, true) : CustomTops.meshFor(slot, o)) : null;
+    if (mesh) {
+      const S = CustomTops.FACE[type - 1][0], R = Renderer3D;   // = the square top face of that tower's building sprite
+      const SS = 4, BS = S * SS;                                  // render 4x, then downsample to crisp pixel art
+      const saved = [R.viewTop, R.viewWidth, R.viewHeight, R.aspect, R.aspectInv, R.fov, R.cameraTransform, R.projection];
+      try {
+        const big = Image.createImage(BS, BS);
+        const g = big.getGraphics();
+        const b = mesh.bounds();
+        const foot = Math.max(b[3] - b[0], b[5] - b[2], 1);
+        const camZ = Math.max(1500.0, foot * 8);
+        const fov = 2 * Math.atan((foot * 0.5 * S / (S - 2)) / camZ) * 180 / Math.PI;   // ~orthographic, 1px margin for the outline
+        R.setupCamera(0, BS, BS);
+        R.setFov(fov);
+        R.lookAt(0.0, 0.0, camZ, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0);
+        R.beginFrame(g);
+        mesh.resetTransform();
+        mesh.rotate(90 / 360, 1.0, 0.0, 0.0);    // straight top-down view, like the block sprites (applied after centring)
+        mesh.translate(-(b[0] + b[3]) / 2, -(b[1] + b[4]) / 2, -(b[2] + b[5]) / 2);   // centre first
+        mesh.render();
+        R.endFrame();
+        img = CustomTops.pixelate(big.canvas, S, SS);
+      } catch (e) { console.warn('top icon: ' + e); img = null; }
+      [R.viewTop, R.viewWidth, R.viewHeight, R.aspect, R.aspectInv, R.fov, R.cameraTransform, R.projection] = saved;
+    }
+    CustomTops.iconCache.set(ck, img);
+    return img;
+  }
+
+  /** Gold-plated colour for a 0..255 luminance (dark bronze -> gold -> pale highlight). */
+  static goldRGB(l) {
+    const t = Math.max(0, Math.min(1, l / 255));
+    const k = Math.pow(t, 0.85);
+    const lo = [96, 56, 6], mid = [255, 196, 36], hi = [255, 244, 176];
+    const mix = (a, b, u) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+    const c = k < 0.7 ? mix(lo, mid, k / 0.7) : mix(mid, hi, (k - 0.7) / 0.3);
+    return [Math.round(c[0]), Math.round(c[1]), Math.round(c[2])];
+  }
+
+  /** Re-skins a (copied) model in gold: textures and vertex colours are mapped through a gold ramp, shading detail is kept. */
+  static goldify(m) {
+    const done = CustomTops.goldTex;
+    for (const sub of m.subs) {
+      if (!sub.tex) continue;
+      let g = done.get(sub.tex);
+      if (!g) {
+        const src = sub.tex.argb, out = new Int32Array(src.length);
+        for (let i = 0; i < src.length; i++) {
+          const p = src[i], r = (p >> 16) & 255, gg = (p >> 8) & 255, b = p & 255;
+          const c = CustomTops.goldRGB(0.3 * r + 0.59 * gg + 0.11 * b);
+          out[i] = (p & 0xFF000000) | (c[0] << 16) | (c[1] << 8) | c[2];
+        }
+        g = { w: sub.tex.w, h: sub.tex.h, argb: out };
+        done.set(sub.tex, g);
+      }
+      sub.tex = g;
+    }
+    for (let v = 0; v < m.colors.length; v++) {
+      const p = m.colors[v], r = (p >> 16) & 255, gg = (p >> 8) & 255, b = p & 255;
+      const c = CustomTops.goldRGB(0.3 * r + 0.59 * gg + 0.11 * b);
+      m.colors[v] = 0xFF000000 | (c[0] << 16) | (c[1] << 8) | c[2];
+    }
+  }
+
+  /** In-game bonus top: the equipped custom model with a golden skin (null = keep the original bonus top). */
+  static gameTopGold(towerModelType) {
+    for (let slot = 0; slot < CustomTops.TYPES.length; slot++) {
+      if (CustomTops.TYPES[slot] === towerModelType) {
+        const o = CustomTops.getAssigned(slot);
+        return o.kind === 2 ? CustomTops.fileMesh(o.file, false, true) : null;
+      }
+    }
+    return null;
+  }
+
+  static fileMesh(file, preview, gold) {
+    const key = (preview ? 'p:' : 'g:') + (gold ? 'gold:' : '') + file;
     const cached = CustomTops.meshCache.get(key);
     if (cached) return cached;
     const src = Model.loadFile(CustomTops.BONUS_DIR + file);
     if (!src) return null;
     const m = src.copy();            // never mutate the shared cached Model
     CustomTops.fit(m, CustomTops.config(file), preview);
+    if (gold) CustomTops.goldify(m);
     const mesh = new Mesh3D(m);
     mesh.setupAppearance();          // REPLACE + clamp, like the built-in tops
     CustomTops.meshCache.set(key, mesh);
@@ -234,6 +366,8 @@ class CustomTops {
   }
 }
 
+/* [size, x, y] of the square top face inside frame 0 of each tower sprite (type 1..5), measured from building_N.png */
+CustomTops.FACE = [[21, 4, 1], [22, 4, 3], [23, 4, 5], [24, 4, 4], [23, 4, 5]];
 CustomTops.NAMES = ['Blue', 'Yellow', 'Green', 'Red', 'Pink'];
 CustomTops.TYPES = [1, 4, 3, 2, 5];
 CustomTops.COLORS = [0x4A90E2, 0xF2C230, 0x4CAF50, 0xE04848, 0xF06FB5];
@@ -242,6 +376,8 @@ CustomTops.BONUS_DIR = 'bonus/';
 CustomTops.options_ = [];
 CustomTops.chosen = ['default', 'default', 'default', 'default', 'default'];
 CustomTops.meshCache = new Map();
+CustomTops.iconCache = new Map();
+CustomTops.goldTex = new Map();
 CustomTops.loadedPrefs = false;
 CustomTops.$clinit = function () {};
 

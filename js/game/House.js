@@ -1233,8 +1233,15 @@ class House extends GameMIDlet {
     Renderer3D.setFov(55.0);
     House.applyCameraLook();
     if (((House.phase === House.PHASE_ROOF) || (House.blockState[0] === House.BLOCK_RETURNING)) || (((House.phase === House.PHASE_INTRO) && (House.blockState[0] !== House.BLOCK_DROPPED)))) {
-      Renderer3D.projected[0] = House.hookX;
-      Renderer3D.projected[1] = ((House.hookY + 528));
+      if (House.customTopActive) {
+        // rope-hook model: continue its own rope from the top of the model up to the crane arm
+        const top = House.craneHookMesh.bounds()[4], ang = ((House.hookX >> 4) / 540.0) * 2 * Math.PI;
+        Renderer3D.projected[0] = House.hookX - (top * Math.sin(ang));
+        Renderer3D.projected[1] = House.hookY + (top * Math.cos(ang));
+      } else {
+        Renderer3D.projected[0] = House.hookX;
+        Renderer3D.projected[1] = ((House.hookY + 528));
+      }
       Renderer3D.projected[2] = 0.0;
       Renderer3D.projected[3] = 1.0;
       Renderer3D.project(Renderer3D.projected);
@@ -1258,9 +1265,12 @@ class House extends GameMIDlet {
       House.craneHookMesh.rotate(((House.swingAngle) / 540.0), 0.0, 0.0, 1.0);
       dVar = House.craneHookMesh;
     } else if (((House.phase === House.PHASE_ROOF) || (House.blockState[0] === House.BLOCK_RETURNING)) || (((House.phase === House.PHASE_INTRO) && (House.blockState[0] !== House.BLOCK_DROPPED)))) {
-      House.craneHookStaticMesh.resetTransform();
-      House.craneHookStaticMesh.translate(House.hookX, House.hookY, 0.0);
-      dVar = House.craneHookStaticMesh;
+      // custom tops hang from the same rope hook as the tower's blocks instead of the roof tongs
+      const roofHook = House.customTopActive ? House.craneHookMesh : House.craneHookStaticMesh;
+      roofHook.resetTransform();
+      roofHook.translate(House.hookX, House.hookY, 0.0);
+      if (House.customTopActive) roofHook.rotate(((House.hookX >> 4) / 540.0), 0.0, 0.0, 1.0);   // same swing as the block hook
+      dVar = roofHook;
     }
     if (dVar != null) {
       dVar.render();
@@ -2118,9 +2128,10 @@ class House extends GameMIDlet {
       }
       House.topMeshBonus = Renderer3D.getModel((House.modelType() + 39), House.RES_3D_MODELS_PACKAGE, true);
       let storeTop = CustomTops.gameTop(House.modelType());
+      House.customTopActive = (storeTop != null);
       if (storeTop != null) {
         House.topMesh = storeTop;
-        House.topMeshBonus = storeTop;
+        House.topMeshBonus = CustomTops.gameTopGold(House.modelType()) || storeTop;   // bonus landing = same model in gold
       }
       if (!House.updateLoadingProgress(16)) {
         return false;
