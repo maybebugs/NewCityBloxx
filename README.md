@@ -23,8 +23,11 @@ Language follows the browser language (`?lang=de` overrides). Progress and high 
 The game renders at the real screen resolution (integer scale 1–4×, text and shapes as vectors, 3D at up to 2×; `?q3d=3` raises 3D quality).
 Sprites are scaled crisp by default; press **P** for smoothed sprites.
 
+## Coins
+Earn coins by stacking (perfects, combos, finished towers, daily streak) and spend them in the Store to unlock tops. Full economy and price list: `COINS_DESIGN.md`. Progress is stored in `localStorage` (`citybloxx.coins`).
+
 ## New in the upgraded version
-- **Pink Tower** – 5th building in City mode (unlocks at level 13), own models, sprites and goal.
+- **Pink Tower** – 5th building in City mode (unlocks at level 13), own models, sprites and goal. It is a regular tower type 5 (50 floors) driven by the same per-type tables as the other four (`tools/patch_pink.py`, `tools/fix_pink_sprites.py`).
 - **Store** (main menu) – choose a custom 3D top for each of the 5 towers (Left/Right = tower, Up/Down = top, Enter = equip, 0 = reload).
   34 extra tops are bundled. The 📦 button (top right) adds your own `.obj` (+ `.mtl`, textures, optional `.properties` – see below);
   files are kept in the browser (IndexedDB), choices in localStorage.

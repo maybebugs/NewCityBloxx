@@ -78,7 +78,7 @@ const UserModels = {
     }
   } catch (e) { console.warn('font load failed', e); }
   await UserModels.restore();
-  const order = ['Storage', 'Lang', 'Resources', 'Vibra', 'SoundPlayer', 'Mesh3D', 'CustomTops', 'Renderer3D', 'Ui', 'CityMode', 'GameMIDlet', 'House', 'MenuController', 'GameCanvas', 'StoreScreen', 'PlatformFactory'];
+  const order = ['Storage', 'Coins', 'Lang', 'Resources', 'Vibra', 'SoundPlayer', 'Mesh3D', 'CustomTops', 'Renderer3D', 'Ui', 'CityMode', 'GameMIDlet', 'House', 'MenuController', 'GameCanvas', 'StoreScreen', 'PlatformFactory'];
   for (const n of order) eval(n + '.$clinit()');       // HighScores statics are initialised lazily (needs screen size)
   document.getElementById('loading').style.display = 'none';
   const game = new House();
@@ -112,4 +112,5 @@ const UserModels = {
     if (e.code === 'KeyF') full(); else if (e.code === 'KeyM') toggleSnd(); else if (e.code === 'KeyP') toggleSm();
   });
   game.startFromLauncher();
+  Coins.checkDaily();   // welcome gift / daily streak bonus (shown as a banner)
 })().catch((e) => { console.error(e); document.getElementById('pct').textContent = 'Error: ' + e.message; });

@@ -1,7 +1,11 @@
 /* Store backend: pick a custom 3D top for each of the 5 towers (hand-port of CustomTops.java).
    Models are OBJ files (+ optional MTL / textures / .properties) in the bundled "bonus" folder; choices are kept in localStorage. */
 class CustomTopsOption {
-  constructor(kind, file, label) { this.kind = kind; this.file = file; this.label = label; }
+  constructor(kind, file, label) {
+    this.kind = kind; this.file = file; this.label = label;
+    this.price = CustomTops.priceFor(kind, file);     // coins; 0 = free
+    this.tier = CustomTops.tierFor(kind, file, this.price);
+  }
   key() { return this.kind === 0 ? 'default' : this.kind === 1 ? 'bonus' : 'file:' + this.file; }
 }
 
@@ -33,6 +37,45 @@ class CustomTops {
     for (const f of Assets.list('bonus')) {
       if (f.toLowerCase().endsWith('.obj')) CustomTops.options_.push(new CustomTopsOption(2, f, CustomTops.labelFor(f)));
     }
+    // Store order = the price ladder: Default first, then cheapest -> most expensive, user-added models last.
+    const rank = (o) => (o.kind === 0 ? -1 : (o.kind === 2 && !(o.file in CustomTops.CATALOG)) ? 1e9 : o.price);
+    CustomTops.options_.sort((a, b) => (rank(a) - rank(b)) || a.label.localeCompare(b.label));
+  }
+
+  /** Price in coins of a bundled top; anything not in the catalog (Default, models you add yourself) is free. */
+  static priceFor(kind, file) {
+    if (kind === 1) return CustomTops.CATALOG['@classic'];
+    if (kind === 2 && file in CustomTops.CATALOG) return CustomTops.CATALOG[file];
+    return 0;
+  }
+
+  static tierFor(kind, file, price) {
+    if (kind === 0) return 0;                                    // STARTER
+    if (kind === 2 && !(file in CustomTops.CATALOG)) return 5;   // CUSTOM (your own models)
+    if (price <= 300) return 1;                                  // COMMON
+    if (price <= 800) return 2;                                  // RARE
+    if (price <= 2000) return 3;                                 // EPIC
+    return 4;                                                    // LEGENDARY
+  }
+
+  static owned(o) { return o.price <= 0 || Coins.owns(o.key()); }
+
+  /** Cheapest top the player does not own yet (the "next goal"), or null when the collection is complete. */
+  static nextGoal() {
+    if (CustomTops.options_.length === 0) CustomTops.rescan();
+    for (const o of CustomTops.options_) if (!CustomTops.owned(o)) return o;
+    return null;
+  }
+
+  static ownedCount() {
+    let n = 0;
+    for (const o of CustomTops.options_) if (o.price > 0 && Coins.owns(o.key())) n++;
+    return n;
+  }
+  static paidCount() {
+    let n = 0;
+    for (const o of CustomTops.options_) if (o.price > 0) n++;
+    return n;
   }
 
   static reloadAll() {
@@ -65,7 +108,7 @@ class CustomTops {
   static getAssigned(slot) {
     if (CustomTops.options_.length === 0) CustomTops.rescan();
     const key = CustomTops.chosen[slot];
-    for (const o of CustomTops.options_) if (o.key() === key) return o;
+    for (const o of CustomTops.options_) if (o.key() === key) return CustomTops.owned(o) ? o : CustomTops.options_[0];
     return CustomTops.options_[0];
   }
 
@@ -201,3 +244,53 @@ CustomTops.chosen = ['default', 'default', 'default', 'default', 'default'];
 CustomTops.meshCache = new Map();
 CustomTops.loadedPrefs = false;
 CustomTops.$clinit = function () {};
+
+/* ---- Store price list (coins). Ladder logic: see COINS_DESIGN.md. Tier = price band. ------------------------------
+   COMMON <=300   cheap, instantly readable shapes -> the first purchase lands inside the first session
+   RARE   <=800   vehicles, nature, sci-fi          -> a few sessions of saving
+   EPIC   <=2000  skyline landmarks (tall, iconic)  -> mid-term goal
+   LEGEND >2000   status symbols                    -> long-term flex
+   Files not listed here (models you add yourself with the box button) are always free. */
+CustomTops.CATALOG = {
+  '@classic': 400,                    // the original game's bonus top (nostalgia item)
+  // COMMON
+  'top_potato.obj': 100,              // Copper Spud   - joke-cheap "starter" purchase
+  'top_vlccone.obj': 120,             // Cone Blocker  - construction theme fits the game
+  'top_cucumber.obj': 120,            // Tall Cuke
+  'top_basketball.obj': 150,          // Hoops
+  'top_tennisball.obj': 150,          // Match Point
+  'top_football.obj': 150,            // Pigskin
+  'top_apple.obj': 180,               // Big Apple
+  'top_orange.obj': 180,              // Juicy Orange
+  'top_poop.obj': 200,                // Swirl Pile    - meme item, priced as a laugh
+  'top_donut.obj': 220,               // Sugar Ring
+  'top_candycane.obj': 250,           // Candy Cane
+  'top_spiral.obj': 250,              // Candy Spiral
+  'top_wine.obj': 300,                // Velvet Bottle
+  'top_bonus_5.obj': 300,             // Bonus Peach
+  // RARE
+  'top_knot.obj': 350,                // Frost Knot
+  'top_celltower.obj': 400,           // Signal Mast
+  'top_rose.obj': 450,                // Velvet Rose
+  'top_plug.obj': 500,                // Fluff Plug
+  'top_breast_up.obj': 500,           // Sky Peak
+  'top_dildo.obj': 500,               // Pink Rocket
+  'top_wand.obj': 550,                // Star Wand
+  'top_airplane.obj': 600,            // Jet Liner
+  'top_earth.obj': 650,               // Blue Marble
+  'top_locomotive.obj': 700,          // SD70ACe
+  'top_c17.obj': 750,                 // Globemaster
+  'top_ufo.obj': 800,                 // Little Saucer
+  // EPIC
+  'top_clocktower.obj': 900,          // Old Clock
+  'top_militarytower.obj': 1100,      // Watchtower
+  'top_tokyotower.obj': 1400,         // Tokyo Tower
+  'top_liberty.obj': 1700,            // Lady Liberty
+  'top_heavengate.obj': 2000,         // Heaven Gate
+  // LEGENDARY
+  'top_devil.obj': 2500,              // Block Devil
+  'top_crown.obj': 3500,              // Gold Crown
+  'top_diamond.obj': 5000,            // Ice Gem       - the ultimate flex
+};
+CustomTops.TIER_NAMES = ['STARTER', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'CUSTOM'];
+CustomTops.TIER_COLORS = [0xB8C4D8, 0xE8E8E8, 0x5AB0FF, 0xC77BFF, 0xFFC82A, 0x7CE0C0];

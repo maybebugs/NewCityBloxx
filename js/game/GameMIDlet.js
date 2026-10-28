@@ -128,6 +128,7 @@ class GameMIDlet extends MIDlet {
     } else if (this.loading) {
       this.paintLoadingOverlay(g);
     }
+    Coins.paintOverlay(g);   // [coins] effects + banners
   }
   destroyApp(unconditional) {
     try {

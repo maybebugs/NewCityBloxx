@@ -117,6 +117,7 @@ class CityMode {
     CityMode.paintPlacedBuildings(g, gridOriginX, gridOriginY);
     CityMode.paintPlacementPiece(g, gridOriginX, gridOriginY);
     CityMode.paintBuildingSelector(g, gridOriginX, gridOriginY);
+    Coins.paintHud(g, true);   // [coins] counter
     if (CityMode.modalActive) {
       House.paintTutorialModal(g);
     }
@@ -1017,6 +1018,7 @@ class CityMode {
         CityMode.level = i;
       }
     }
+    Coins.onCityLevel(CityMode.level);   // [coins] level rewards
     let i3 = CityMode.unlockedBuildingTier;
     for (i = 0; i < CityMode.buildingUnlockLevels.length; i++) {
       if ((CityMode.level >= CityMode.buildingUnlockLevels[i]) || CityMode.cheatActive) {

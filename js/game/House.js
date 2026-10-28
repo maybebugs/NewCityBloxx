@@ -1,6 +1,6 @@
 class House extends GameMIDlet {
   static modelType() {
-    return House.pinkTower ? House.PINK_MODEL_TYPE : House.towerType;
+    return House.towerType;
   }
   static updateCitizens() {
     let i = 0;
@@ -285,12 +285,13 @@ class House extends GameMIDlet {
           House.comboBonus = (((Math.imul(((128 - abs)), House.towerType)) / 2) | 0);
           House.landingQuality = 2;
         } else {
-          House.comboBonus = ((((128 - abs)) / ((5 - House.towerType))) | 0);
+          House.comboBonus = ((((128 - abs)) / Math.max(1, (5 - House.towerType))) | 0);
           House.landingQuality = 1;
         }
         House.addScore(House.comboBonus);
         House.comboTimer = 0;
       }
+      Coins.onLanding(abs < 25, House.phase === House.PHASE_ROOF);   // [coins] pay for the landing
       return true;
     }
     let direction = ((offset / abs) | 0);
@@ -307,6 +308,7 @@ class House extends GameMIDlet {
     return true;
   }
   static cashInCombo() {
+    Coins.onCombo(House.comboCount);   // [coins] combo payout
     House.score += House.comboBonus;
     House.comboCount = 0;
     House.comboTimer = 0;
@@ -368,7 +370,7 @@ class House extends GameMIDlet {
           House.roundFinishedQuick = false;
         }
         if (House.gameMode === House.GAME_MODE_CITY_TOWER) {
-          CityMode.startPlacement((House.pinkTower ? 5 : House.towerType), House.score, House.landingQuality);
+          CityMode.startPlacement(House.towerType, House.score, House.landingQuality);
           House.screenState = 7;
           House.nextScreenState = 2;
         } else {
@@ -393,6 +395,7 @@ class House extends GameMIDlet {
     House.clearKeys();
   }
   static initArrays() {
+    Coins.startRound();   // [coins] fresh per-round tally
     let z = true;
     House.blockState = new Int32Array(5);
     House.blockAngle = new Int32Array(5);
@@ -676,6 +679,7 @@ class House extends GameMIDlet {
     g.fillRect((House.horizonBumpX - 13), (i2 - 7), 26, 13);
   }
   buildResultText(isVictory) {
+    const prevBest = House.progress[4];   // [coins] floor record before this round
     let resultText = (Resources.getString$2(93, [String(House.score)]) + "\n");
     let bonusText = Resources.getString$1(96);
     if (isVictory && (House.score > House.progress[3])) {
@@ -694,6 +698,7 @@ class House extends GameMIDlet {
       resultText = ((resultText + "\n") + bonusText);
       House.progress[5] = House.maxCombo;
     }
+    resultText += Coins.finishRound(House.gameMode === House.GAME_MODE_QUICK, House.blockCount, prevBest);   // [coins] summary lines
     this.saveSettings();
     House.showPrompt(resultText, null, null);
     House.screenState = 6;
@@ -1089,7 +1094,7 @@ class House extends GameMIDlet {
       dos.writeInt(House.skyStageLength);
       dos.writeInt(House.blockCount);
       dos.writeInt(House.blockGoal);
-      dos.writeInt((House.towerType + ((House.pinkTower ? House.SAVE_PINK_FLAG : 0))));
+      dos.writeInt(House.towerType);
       dos.writeInt(House.foundationOffset);
       dos.writeInt(House.unusedValue);
       dos.writeInt(House.scrolledOffsetSum);
@@ -1332,7 +1337,7 @@ class House extends GameMIDlet {
       dos.writeInt(House.skyStageLength);
       dos.writeInt(House.blockCount);
       dos.writeInt(House.blockGoal);
-      dos.writeInt((House.towerType + ((House.pinkTower ? House.SAVE_PINK_FLAG : 0))));
+      dos.writeInt(House.towerType);
       dos.writeInt(House.foundationOffset);
       dos.writeInt(House.unusedValue);
       dos.writeInt(House.scrolledOffsetSum);
@@ -1557,11 +1562,12 @@ class House extends GameMIDlet {
     House.paintScore(g);
     House.paintTowerProgress(g);
     House.paintComboGauge(g);
+    Coins.paintHud(g, false);   // [coins] counter
   }
   static paintLives(g) {
     House.setClipRect(g, (((((House.hudX + ((House.hudX >> 1)))) + 14)) + 4), (((GameMIDlet.screenHeight - House.hudHeight)) - 72), 11, 72);
-    let normalIndex = (House.pinkTower ? House.LIFE_ICON_PINK : Math.imul(((House.towerType - 1)), 2));
-    let losingIndex = (House.pinkTower ? House.LIFE_ICON_PINK_LOSS : ((Math.imul(((House.towerType - 1)), 2)) + 1));
+    let normalIndex = House.LIFE_ICON_BY_TYPE[(House.towerType - 1)];
+    let losingIndex = House.LIFE_ICON_LOSS_BY_TYPE[(House.towerType - 1)];
     for (let i = 0; i <= 3; i++) {
       let iconIndex = normalIndex;
       if (i > House.lives) {
@@ -1582,7 +1588,7 @@ class House extends GameMIDlet {
   static paintTowerProgress(g) {
     if (House.gameMode === House.GAME_MODE_CITY_TOWER) {
       House.setClipRect(g, (House.hudX - 3), (((((GameMIDlet.screenHeight - House.hudHeight)) - 21)) - (Math.imul(House.blockGoal, 3))), 20, 21);
-      let medalIndex = (House.pinkTower ? House.MEDAL_PINK : ((House.towerType - 1)));
+      let medalIndex = House.MEDAL_BY_TYPE[(House.towerType - 1)];
       if ((House.phase === House.PHASE_ROOF) && (((((House.gameTime / 500) | 0)) % 2) === 0)) {
         medalIndex = House.MEDAL_ROOF;
       }
@@ -1869,7 +1875,7 @@ class House extends GameMIDlet {
             if (House.comboTimer > 0) {
               House.cashInCombo();
             }
-            if (House.bonusEligible && (House.score < House.scoreThresholds[(House.pinkTower ? 4 : (House.towerType - 1))])) {
+            if (House.bonusEligible && (House.score < House.scoreThresholds[(House.towerType - 1)])) {
               House.bonusEligible = false;
             }
             House.blockY[House.CRANE_SLOT] = House.pivotY;
@@ -2636,12 +2642,8 @@ class House extends GameMIDlet {
           } else {
             z = false;
           }
-          House.pinkTower = (House.towerType === 5);
-          if (House.pinkTower) {
-            House.towerType = 4;
-          }
           House.bonusEligible = z;
-          House.blockGoal = (House.pinkTower ? House.PINK_BLOCK_GOAL : House.goalByTowerType[(House.towerType - 1)]);
+          House.blockGoal = House.goalByTowerType[(House.towerType - 1)];
           House.initArrays();
           House.screenState = 7;
           House.nextScreenState = 1;
@@ -3180,9 +3182,8 @@ class House extends GameMIDlet {
       House.blockCount = dis.readInt();
       House.blockGoal = dis.readInt();
       House.towerType = dis.readInt();
-      House.pinkTower = (House.towerType >= House.SAVE_PINK_FLAG);
-      if (House.pinkTower) {
-        House.towerType -= House.SAVE_PINK_FLAG;
+      if (House.towerType >= House.SAVE_PINK_FLAG) {
+        House.towerType = 5;   // saves from before the pink tower became type 5 stored it as 4 + 100
       }
       House.foundationOffset = dis.readInt();
       House.unusedValue = dis.readInt();
@@ -3495,9 +3496,8 @@ class House extends GameMIDlet {
       House.blockCount = dis.readInt();
       House.blockGoal = dis.readInt();
       House.towerType = dis.readInt();
-      House.pinkTower = (House.towerType >= House.SAVE_PINK_FLAG);
-      if (House.pinkTower) {
-        House.towerType -= House.SAVE_PINK_FLAG;
+      if (House.towerType >= House.SAVE_PINK_FLAG) {
+        House.towerType = 5;   // saves from before the pink tower became type 5 stored it as 4 + 100
       }
       House.foundationOffset = dis.readInt();
       House.unusedValue = dis.readInt();
@@ -3728,7 +3728,6 @@ class House extends GameMIDlet {
       }
       House.gameMode = House.GAME_MODE_QUICK;
       House.towerType = 4;
-      House.pinkTower = false;
       House.blockGoal = House.goalByTowerType[(House.towerType - 1)];
       House.initArrays();
       this.loadTowerQuickMode();
@@ -3800,7 +3799,6 @@ class House extends GameMIDlet {
         i = 2;
       } else {
         House.towerType = 4;
-        House.pinkTower = false;
         House.blockGoal = House.goalByTowerType[(House.towerType - 1)];
         House.initArrays();
         House.roundFinishedQuick = false;
@@ -3972,9 +3970,9 @@ House.$clinit = function () {
   House.prevHookX = 0;
   House.prevHookY = 0;
   House.craneTime = 0;
-  House.swingAmplitudeXByType = new Int32Array([213, 256, 298, 341, 384]);
-  House.swingAmplitudeYByType = new Int32Array([85, 106, 128, 149, 170]);
-  House.swingPeriodTable = new Int32Array([1670, 1700, 1650, 1600, 1550, 1500, 1450]);
+  House.swingAmplitudeXByType = new Int32Array([213, 256, 298, 341, 384, 427]);
+  House.swingAmplitudeYByType = new Int32Array([85, 106, 128, 149, 170, 191]);
+  House.swingPeriodTable = new Int32Array([1670, 1700, 1650, 1600, 1550, 1500, 1450, 1400]);
   House.centerX = 0;
   House.centerY = 0;
   House.camX = 0;
@@ -4047,9 +4045,6 @@ House.$clinit = function () {
   House.floorY = new Int32Array(5);
   House.phase = 0;
   House.towerType = 0;
-  House.pinkTower = false;
-  House.PINK_MODEL_TYPE = 5;
-  House.PINK_BLOCK_GOAL = 50;
   House.SAVE_PINK_FLAG = 100;
   House.offsetSum = 0;
   House.scrolledOffsetSum = 0;
@@ -4188,17 +4183,17 @@ House.$clinit = function () {
   House.CAM_PITCH_LIMIT = 89;
   House.LIFE_ICON_EMPTY = 8;
   House.LIFE_ICON_BLINK = 9;
-  House.LIFE_ICON_PINK = 10;
-  House.LIFE_ICON_PINK_LOSS = 11;
+  House.LIFE_ICON_BY_TYPE = new Int32Array([0, 2, 4, 6, 10]);        // life-icon sheet: 2 per tower (normal, losing), pink last
+  House.LIFE_ICON_LOSS_BY_TYPE = new Int32Array([1, 3, 5, 7, 11]);
   House.MEDAL_ROOF = 4;
-  House.MEDAL_PINK = 5;
+  House.MEDAL_BY_TYPE = new Int32Array([0, 1, 2, 3, 5]);   // medal sheet: roof flash sits between yellow and pink
   House.gameMode = 0;
   House.screenState = 0;
   House.roundFinishedQuick = false;
   House.roundFinishedCity = false;
   House.perfectTipActiveCity = false;
   House.perfectTipActiveQuick = false;
-  House.goalByTowerType = new Int32Array([10, 20, 30, 40]);
+  House.goalByTowerType = new Int32Array([10, 20, 30, 40, 50]);
   House.scoreThresholds = null;
   House.promptLines = null;
   House.loadCancelled = false;
