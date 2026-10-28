@@ -132,7 +132,7 @@ class StoreScreen {
     if (this.options == null) return;
     const w = GameMIDlet.screenWidth;
     if (py >= 26 && py < 64) {                       // tower chips
-      const chipW = 42, gap = 3, cnt = CustomTops.NAMES.length;
+      const gap = 3, cnt = CustomTops.NAMES.length, chipW = Math.min(42, ((w - 6 - (cnt - 1) * gap) / cnt) | 0);
       const x0 = ((w - (cnt * chipW + (cnt - 1) * gap)) / 2) | 0;
       const i = Math.floor((px - x0) / (chipW + gap));
       if (i >= 0 && i < cnt) this.selectSlot(i);
@@ -188,7 +188,7 @@ class StoreScreen {
     Coins.paintBalance(g, w - 6, 5, true);
 
     // ---- tower chips
-    let chipW = 42, gap = 3;
+    let gap = 3, chipW = Math.min(42, ((w - 6 - (CustomTops.NAMES.length - 1) * gap) / CustomTops.NAMES.length) | 0);
     let x0 = ((((w - ((Math.imul(CustomTops.NAMES.length, chipW) + Math.imul(((CustomTops.NAMES.length - 1)), gap))))) / 2) | 0);
     g.setFont(this.smallFont);
     for (let i = 0; i < CustomTops.NAMES.length; i++) {

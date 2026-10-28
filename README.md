@@ -28,7 +28,8 @@ Earn coins by stacking (perfects, combos, finished towers, daily streak) and spe
 
 ## New in the upgraded version
 - **Pink Tower** – 5th building in City mode (unlocks at level 13), own models, sprites and goal. It is a regular tower type 5 (50 floors) driven by the same per-type tables as the other four (`tools/patch_pink.py`, `tools/fix_pink_sprites.py`).
-- **Store** (main menu) – choose a custom 3D top for each of the 5 towers (Left/Right = tower, Up/Down = top, Enter = equip, 0 = reload).
+- **Cyan Tower** – 6th building in City mode (unlocks at level 16; special variant at level 20), 60 floors, own block models/textures, a unique crystal-spire top and a special floating-crystal top (`top_6`, `top_bonus_6`), sprites, HUD/life/medal icons. Build it on a plot touching the Pink Tower and two other building types (`tools/add_cyan.py`, `tools/patch_cyan.py`).
+- **Store** (main menu) – choose a custom 3D top for each of the 6 towers (Left/Right = tower, Up/Down = top, Enter = equip, 0 = reload).
   34 extra tops are bundled. The 📦 button (top right) adds your own `.obj` (+ `.mtl`, textures, optional `.properties` – see below);
   files are kept in the browser (IndexedDB), choices in localStorage.
 - **Free camera** – **C** toggles it; **W/A/S/D** move, **Q/E** turn, **Z/X** look up/down.

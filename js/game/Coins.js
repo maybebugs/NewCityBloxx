@@ -124,7 +124,7 @@ class Coins {
   /** The roof landed: city-mode tower finished. */
   static onTowerComplete(p) {
     const R = Coins.R;
-    const idx = Math.max(0, Math.min(4, House.towerType - 1));
+    const idx = Math.max(0, Math.min(5, House.towerType - 1));
     const roofBonus = House.landingQuality === 2;
     let n = R.TOWER_DONE[idx];
     if (roofBonus) n = Math.round(n * R.ROOF_BONUS_MULT);
@@ -421,7 +421,7 @@ Coins.R = {
   PERFECT: 2,                   // |offset| < 25: twice the pay, and it feeds the combo
   COMBO_MIN: 3,                 // combo payout starts at x3 ...
   COMBO_CAP: 10,                // ... pays the combo count, capped
-  TOWER_DONE: [10, 20, 35, 50, 75],   // finished city tower: blue, red, green, yellow, pink
+  TOWER_DONE: [10, 20, 35, 50, 75, 100],   // finished city tower: blue, red, green, yellow, pink, cyan
   ROOF_BONUS_MULT: 1.5,         // bonus roof landing
   QUICK_PER_10: 2,              // quick mode: per 10 floors on game over
   QUICK_RECORD: 25,             // quick mode: new floor record

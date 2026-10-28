@@ -8,10 +8,10 @@ class CityMode {
     CityMode.cellLevels = new Int32Array(25);
     CityMode.tutorialShown = new Array(46).fill(false);
     CityMode.highlightCells = new Int32Array(16);
-    CityMode.buildingNames = [Resources.getString$1(83), Resources.getString$1(84), Resources.getString$1(85), Resources.getString$1(86), CityMode.PINK_NAME, Resources.getString$1(87), Resources.getString$1(88), Resources.getString$1(89), Resources.getString$1(90), CityMode.PINK_SPECIAL_NAME];
-    CityMode.helpLines = new Array(15).fill(null);
+    CityMode.buildingNames = [Resources.getString$1(83), Resources.getString$1(84), Resources.getString$1(85), Resources.getString$1(86), CityMode.PINK_NAME, CityMode.CYAN_NAME, Resources.getString$1(87), Resources.getString$1(88), Resources.getString$1(89), Resources.getString$1(90), CityMode.PINK_SPECIAL_NAME, CityMode.CYAN_SPECIAL_NAME];
+    CityMode.helpLines = new Array(18).fill(null);
     let i = (GameMIDlet.screenWidth - 20);
-    let strArr = [Resources.getString$1(99), Resources.getString$1(100), Resources.getString$1(101), Resources.getString$1(102), CityMode.PINK_HELP];
+    let strArr = [Resources.getString$1(99), Resources.getString$1(100), Resources.getString$1(101), Resources.getString$1(102), CityMode.PINK_HELP, CityMode.CYAN_HELP];
     for (let i2 = 0; i2 < CityMode.BUILDING_COUNT; i2++) {
       CityMode.helpLines[i2] = House.wrapText(strArr[i2], CityMode.font, i);
       CityMode.helpLines[(i2 + CityMode.BUILDING_COUNT)] = House.wrapText(Resources.getString$2(62, [CityMode.buildingNames[i2], String(House.scoreThresholds[i2])]), CityMode.font, i);
@@ -485,7 +485,7 @@ class CityMode {
         offsetY += (((Math.imul(CityMode.slideY, CityMode.slideTimer)) / 150) | 0);
       }
       if (CityMode.placeDelay < 0) {
-        let shadowWidth = ((CityMode.buildingSprites[CityMode.SHADOW_SPRITE].getWidth() / 5) | 0);
+        let shadowWidth = ((CityMode.buildingSprites[CityMode.SHADOW_SPRITE].getWidth() / CityMode.BUILDING_COUNT) | 0);
         let shadowHeight = CityMode.buildingSprites[CityMode.SHADOW_SPRITE].getHeight();
         g.setClip((offsetX - 2), (offsetY - 27), shadowWidth, shadowHeight);
         effectImage = CityMode.buildingSprites[CityMode.SHADOW_SPRITE];
@@ -551,7 +551,7 @@ class CityMode {
             bX += 2;
             bY -= 2;
           }
-          let shadowWidth = ((CityMode.buildingSprites[CityMode.SHADOW_SPRITE].getWidth() / 5) | 0);
+          let shadowWidth = ((CityMode.buildingSprites[CityMode.SHADOW_SPRITE].getWidth() / CityMode.BUILDING_COUNT) | 0);
           let shadowHeight = CityMode.buildingSprites[CityMode.SHADOW_SPRITE].getHeight();
           g.setClip((bX - 2), (bY - 27), shadowWidth, shadowHeight);
           g.drawImage(CityMode.buildingSprites[CityMode.SHADOW_SPRITE], (((bX - 2)) - (Math.imul(shadowWidth, tier))), (bY - 27), 20);
@@ -768,13 +768,43 @@ class CityMode {
       CityMode.tutorialShown[37] = true;
       CityMode.modalActive = true;
     }
+    if (!((CityMode.modalActive || CityMode.placementInProgress) || CityMode.unlockedBuildingTier < 5 || CityMode.cyanSeen('b'))) {
+      House.showPrompt(CityMode.CYAN_UNLOCK, null, null);
+      CityMode.cyanSeen('b', true);
+      CityMode.modalActive = true;
+    }
+    if (!((CityMode.modalActive || CityMode.placementInProgress) || CityMode.unlockedSpecialTier < 5 || CityMode.cyanSeen('s'))) {
+      House.showPrompt(Resources.getString$2(51, [CityMode.buildingNames[11]]), null, null);
+      CityMode.cyanSeen('s', true);
+      CityMode.modalActive = true;
+    }
+    if (!((CityMode.modalActive || CityMode.placementInProgress) || CityMode.unlockedBuildingTier < 5 || CityMode.cyanSeen('b'))) {
+      House.showPrompt(CityMode.CYAN_UNLOCK, null, null);
+      CityMode.cyanSeen('b', true);
+      CityMode.modalActive = true;
+    }
+    if (!((CityMode.modalActive || CityMode.placementInProgress) || CityMode.unlockedSpecialTier < 5 || CityMode.cyanSeen('s'))) {
+      House.showPrompt(Resources.getString$2(51, [CityMode.buildingNames[11]]), null, null);
+      CityMode.cyanSeen('s', true);
+      CityMode.modalActive = true;
+    }
+    if (!((CityMode.modalActive || CityMode.placementInProgress) || CityMode.unlockedBuildingTier < 5 || CityMode.cyanSeen('b'))) {
+      House.showPrompt(CityMode.CYAN_UNLOCK, null, null);
+      CityMode.cyanSeen('b', true);
+      CityMode.modalActive = true;
+    }
+    if (!((CityMode.modalActive || CityMode.placementInProgress) || CityMode.unlockedSpecialTier < 5 || CityMode.cyanSeen('s'))) {
+      House.showPrompt(Resources.getString$2(51, [CityMode.buildingNames[11]]), null, null);
+      CityMode.cyanSeen('s', true);
+      CityMode.modalActive = true;
+    }
     if (!((((CityMode.modalActive || CityMode.pinkPrompt[0]) || (CityMode.unlockedBuildingTier < 4)) || CityMode.placementInProgress))) {
       House.showPrompt(CityMode.PINK_UNLOCK, null, null);
       CityMode.pinkPrompt[0] = true;
       CityMode.modalActive = true;
     }
     if (!((((CityMode.modalActive || CityMode.pinkPrompt[1]) || (CityMode.unlockedSpecialTier < 4)) || CityMode.placementInProgress))) {
-      House.showPrompt(Resources.getString$2(51, [CityMode.buildingNames[9]]), null, null);
+      House.showPrompt(Resources.getString$2(51, [CityMode.buildingNames[10]]), null, null);
       CityMode.pinkPrompt[1] = true;
       CityMode.modalActive = true;
     }
@@ -914,7 +944,7 @@ class CityMode {
   }
   static updateCityHintText(totalTimeMs) {
     if (CityMode.helpLines == null) {
-      CityMode.helpLines = new Array(15).fill(null);
+      CityMode.helpLines = new Array(18).fill(null);
     }
     let nextHint;
     if (CityMode.phase === 0) {
@@ -992,7 +1022,7 @@ class CityMode {
       return false;
     }
     CityMode.buildIcon = Resources.getImage(24);
-    CityMode.buildingSprites = new Array(6).fill(null);
+    CityMode.buildingSprites = new Array(7).fill(null);
     CityMode.buildingSprites[0] = Resources.getImage(25);
     if (!House.updateLoadingProgress(25)) {
       return false;
@@ -1004,9 +1034,12 @@ class CityMode {
       return false;
     }
     CityMode.buildingSprites[4] = Resources.getImage(CityMode.PINK_SPRITE_RESOURCE);
+    CityMode.buildingSprites[5] = Resources.getImage(CityMode.CYAN_SPRITE_RESOURCE);
+    CityMode.buildingSprites[5] = Resources.getImage(CityMode.CYAN_SPRITE_RESOURCE);
+    CityMode.buildingSprites[5] = Resources.getImage(CityMode.CYAN_SPRITE_RESOURCE);
     CityMode.buildingSprites[CityMode.SHADOW_SPRITE] = Resources.getImage(29);
     CityMode.loadGridTops();
-    for (let t = 1; t <= 5; t++) CustomTops.iconForKey(t, CustomTops.equippedKeyForType(t));   // generate icons at start
+    for (let t = 1; t <= 6; t++) CustomTops.iconForKey(t, CustomTops.equippedKeyForType(t));   // generate icons at start
     for (const c in CityMode.gridTops) CustomTops.iconForKey(CityMode.gridTops[c].t, CityMode.gridTops[c].k);
     CityMode.tileEffectFrames = Resources.getImage(30);
     if (!House.updateLoadingProgress(40)) {
@@ -1050,8 +1083,26 @@ class CityMode {
     CityMode.assetsLoaded = true;
     return true;
   }
+  static cyanSeen(k, set) {
+    try {
+      if (set) localStorage.setItem('citybloxx.cyan.' + k, '1');
+      return localStorage.getItem('citybloxx.cyan.' + k) === '1';
+    } catch (e) { return true; }
+  }
+  static cyanSeen(k, set) {
+    try {
+      if (set) localStorage.setItem('citybloxx.cyan.' + k, '1');
+      return localStorage.getItem('citybloxx.cyan.' + k) === '1';
+    } catch (e) { return true; }
+  }
+  static cyanSeen(k, set) {
+    try {
+      if (set) localStorage.setItem('citybloxx.cyan.' + k, '1');
+      return localStorage.getItem('citybloxx.cyan.' + k) === '1';
+    } catch (e) { return true; }
+  }
   static getBuildingTowerType() {
-    return (CityMode.unlockedSpecialTier >= CityMode.selectedBuilding) ? (CityMode.selectedBuilding + 6) : (CityMode.selectedBuilding + 1);
+    return (CityMode.unlockedSpecialTier >= CityMode.selectedBuilding) ? (CityMode.selectedBuilding + 7) : (CityMode.selectedBuilding + 1);
   }
   static clearInputState() {
     CityMode.keyUp = false;
@@ -1127,6 +1178,15 @@ class CityMode {
           i3++;
         }
         i3 = (((((zArr[0] && zArr[1]) && zArr[2]) && zArr[3])) ? 4 : ((((zArr[0] && zArr[1]) && zArr[2])) ? 3 : (((zArr[0] && zArr[1])) ? 2 : (zArr[0] ? 1 : 0))));
+        if (iArr.indexOf(5) >= 0 && new Set(Array.from(iArr).filter((t) => t > 0 && t <= 5)).size >= 3) {
+          i3 = 5;   // cyan tower plot: pink neighbour + at least two other building types
+        }
+        if (iArr.indexOf(5) >= 0 && new Set(Array.from(iArr).filter((t) => t > 0 && t <= 5)).size >= 3) {
+          i3 = 5;   // cyan tower plot: pink neighbour + at least two other building types
+        }
+        if (iArr.indexOf(5) >= 0 && new Set(Array.from(iArr).filter((t) => t > 0 && t <= 5)).size >= 3) {
+          i3 = 5;   // cyan tower plot: pink neighbour + at least two other building types
+        }
         CityMode.cellLevels[((Math.imul(i, 5)) + i2)] = i3;
         if (i3 > CityMode.highestTierUnlocked) {
           CityMode.highestTierUnlocked = i3;
@@ -1401,10 +1461,10 @@ class CityMode {
 CityMode.$clinit = function () {
   CityMode.skyGradient = new Int32Array([175, 229, 255, -87, -89, 0]);
   CityMode.bandColors = new Int32Array([-8556946, -1318431, -3351282, -5399421, -11456464, -14475756, -14475756, -14475756, -14475756, -14475756, -14475756, -14475756, -14475756, -14475756, -11456464, -1318431, -8556946, -15463412]);
-  CityMode.buildingColors = new Int32Array([-12357161, -2024952, -15618292, -2449664, -2076516, -16044658, -8122095, -16491520, -11520000, -29496]);
-  CityMode.tierColorsPrimary = new Int32Array([-12355561, -11506121, -10983088, -10329750, -6657400]);
-  CityMode.tierColorsSecondary = new Int32Array([-8864728, -8409274, -8084131, -7693196, -4682586]);
-  CityMode.cellPalette = new Int32Array([-16755552, -6290944, -16738304, -7120384, -5227380, -12793601, -38586, -13107401, -983296, -32576]);
+  CityMode.buildingColors = new Int32Array([-12357161, -2024952, -15618292, -2449664, -2076516, -14430232, -16044658, -8122095, -16491520, -11520000, -29496, -6619137]);
+  CityMode.tierColorsPrimary = new Int32Array([-12355561, -11506121, -10983088, -10329750, -6657400, -10282336]);
+  CityMode.tierColorsSecondary = new Int32Array([-8864728, -8409274, -8084131, -7693196, -4682586, -7618362]);
+  CityMode.cellPalette = new Int32Array([-16755552, -6290944, -16738304, -7120384, -5227380, -16744305, -12793601, -38586, -13107401, -983296, -32576, -8388353]);
   CityMode.keyUp = false;
   CityMode.keyDown = false;
   CityMode.keyLeft = false;
@@ -1415,13 +1475,26 @@ CityMode.$clinit = function () {
   CityMode.hudBarSprite = null;
   CityMode.buildIcon = null;
   CityMode.buildingSprites = null;
-  CityMode.BUILDING_COUNT = 5;
-  CityMode.SHADOW_SPRITE = 5;
+  CityMode.BUILDING_COUNT = 6;
+  CityMode.SHADOW_SPRITE = 6;
   CityMode.PINK_SPRITE_RESOURCE = 100;
+  CityMode.CYAN_SPRITE_RESOURCE = 102;
   CityMode.PINK_NAME = "Pink Tower";
   CityMode.PINK_SPECIAL_NAME = "Special Pink Tower";
   CityMode.PINK_HELP = "Pink Tower: build it on a plot that touches all four other building types.";
   CityMode.PINK_UNLOCK = "New building unlocked: the Pink Tower!";
+  CityMode.CYAN_NAME = "Cyan Tower";
+  CityMode.CYAN_SPECIAL_NAME = "Special Cyan Tower";
+  CityMode.CYAN_HELP = "Cyan Tower: build it on a plot touching the Pink Tower and two other building types.";
+  CityMode.CYAN_UNLOCK = "New building unlocked: the Cyan Tower!";
+  CityMode.CYAN_NAME = "Cyan Tower";
+  CityMode.CYAN_SPECIAL_NAME = "Special Cyan Tower";
+  CityMode.CYAN_HELP = "Cyan Tower: build it on a plot touching the Pink Tower and two other building types.";
+  CityMode.CYAN_UNLOCK = "New building unlocked: the Cyan Tower!";
+  CityMode.CYAN_NAME = "Cyan Tower";
+  CityMode.CYAN_SPECIAL_NAME = "Special Cyan Tower";
+  CityMode.CYAN_HELP = "Cyan Tower: build it on a plot touching the Pink Tower and two other building types.";
+  CityMode.CYAN_UNLOCK = "New building unlocked: the Cyan Tower!";
   CityMode.pinkPrompt = new Array(2).fill(false);
   CityMode.tileEffectFrames = null;
   CityMode.dustEffectFrames = null;
@@ -1452,8 +1525,8 @@ CityMode.$clinit = function () {
   CityMode.hintCellTooLow = null;
   CityMode.hintOffGrid = null;
   CityMode.hintCustom = null;
-  CityMode.buildingUnlockLevels = new Int32Array([0, 3, 6, 10, 13]);
-  CityMode.specialUnlockLevels = new Int32Array([8, 12, 14, 16, 18]);
+  CityMode.buildingUnlockLevels = new Int32Array([0, 3, 6, 10, 13, 16]);
+  CityMode.specialUnlockLevels = new Int32Array([8, 12, 14, 16, 18, 20]);
   CityMode.unlockedBuildingTier = 0;
   CityMode.bonusUnlockLevels = new Int32Array([0, 1, 4, 7, 9, 11, 13, 15, 18, 20]);
   CityMode.levelNames = null;

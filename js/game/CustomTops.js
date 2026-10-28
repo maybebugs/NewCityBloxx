@@ -367,14 +367,14 @@ class CustomTops {
 }
 
 /* [size, x, y] of the square top face inside frame 0 of each tower sprite (type 1..5), measured from building_N.png */
-CustomTops.FACE = [[21, 4, 1], [22, 4, 3], [23, 4, 5], [24, 4, 4], [23, 4, 5]];
-CustomTops.NAMES = ['Blue', 'Yellow', 'Green', 'Red', 'Pink'];
-CustomTops.TYPES = [1, 4, 3, 2, 5];
-CustomTops.COLORS = [0x4A90E2, 0xF2C230, 0x4CAF50, 0xE04848, 0xF06FB5];
+CustomTops.FACE = [[21, 4, 1], [22, 4, 3], [23, 4, 5], [24, 4, 4], [23, 4, 5], [23, 4, 5]];
+CustomTops.NAMES = ['Blue', 'Yellow', 'Green', 'Red', 'Pink', 'Cyan'];
+CustomTops.TYPES = [1, 4, 3, 2, 5, 6];
+CustomTops.COLORS = [0x4A90E2, 0xF2C230, 0x4CAF50, 0xE04848, 0xF06FB5, 0x2CC8E0];
 CustomTops.KIND_DEFAULT = 0; CustomTops.KIND_CLASSIC_BONUS = 1; CustomTops.KIND_FILE = 2;
 CustomTops.BONUS_DIR = 'bonus/';
 CustomTops.options_ = [];
-CustomTops.chosen = ['default', 'default', 'default', 'default', 'default'];
+CustomTops.chosen = ['default', 'default', 'default', 'default', 'default', 'default'];
 CustomTops.meshCache = new Map();
 CustomTops.iconCache = new Map();
 CustomTops.goldTex = new Map();

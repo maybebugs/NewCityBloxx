@@ -1227,6 +1227,12 @@ class House extends GameMIDlet {
       System.out.println(("Exception in saveTowerQuickMode(), e:" + (e).message));
     }
   }
+  /** Custom tops differ in height: lift the rope hook so it grabs the top's highest point (a floor block's top is y = 128). */
+  hookLift() {
+    if (!House.customTopActive || House.phase !== House.PHASE_ROOF) return 0;
+    const m = House.bonusEligible ? House.topMeshBonus : House.topMesh;
+    return m ? Math.max(-60, m.bounds()[4] - 128) : 0;
+  }
   render3D(g) {
     let i;
     let dVar = null;
@@ -1237,7 +1243,7 @@ class House extends GameMIDlet {
         // rope-hook model: continue its own rope from the top of the model up to the crane arm
         const top = House.craneHookMesh.bounds()[4], ang = ((House.hookX >> 4) / 540.0) * 2 * Math.PI;
         Renderer3D.projected[0] = House.hookX - (top * Math.sin(ang));
-        Renderer3D.projected[1] = House.hookY + (top * Math.cos(ang));
+        Renderer3D.projected[1] = House.hookY + this.hookLift() + (top * Math.cos(ang));
       } else {
         Renderer3D.projected[0] = House.hookX;
         Renderer3D.projected[1] = ((House.hookY + 528));
@@ -1268,7 +1274,7 @@ class House extends GameMIDlet {
       // custom tops hang from the same rope hook as the tower's blocks instead of the roof tongs
       const roofHook = House.customTopActive ? House.craneHookMesh : House.craneHookStaticMesh;
       roofHook.resetTransform();
-      roofHook.translate(House.hookX, House.hookY, 0.0);
+      roofHook.translate(House.hookX, House.hookY + (House.customTopActive ? this.hookLift() : 0), 0.0);
       if (House.customTopActive) roofHook.rotate(((House.hookX >> 4) / 540.0), 0.0, 0.0, 1.0);   // same swing as the block hook
       dVar = roofHook;
     }
@@ -2344,7 +2350,7 @@ class House extends GameMIDlet {
       Renderer3D.project(Renderer3D.projected);
     }
     House.skyStageLength = Math.max(House.viewHeightUnits, 2048);
-    House.scoreThresholds = new Int32Array([70, 250, 550, 1000, 1500]);
+    House.scoreThresholds = new Int32Array([70, 250, 550, 1000, 1500, 2200]);
     this.onLoad();
     if (House.hasSavedGame(3)) {
       House.hasCitySave = true;
@@ -2647,8 +2653,8 @@ class House extends GameMIDlet {
         if (CityMode.isTowerGameActive()) {
           let z;
           House.towerType = CityMode.getBuildingTowerType();
-          if (House.towerType > 5) {
-            House.towerType -= 5;
+          if (House.towerType > 6) {
+            House.towerType -= 6;
             z = true;
           } else {
             z = false;
@@ -3948,7 +3954,7 @@ class House extends GameMIDlet {
     this.sound.preload(House.SFX_GOOD_DROP, false);
     this.sound.preload(House.SFX_PERFECT_DROP, false);
     Renderer3D.init(0, GameMIDlet.screenWidth, GameMIDlet.screenHeight);
-    Renderer3D.preloadModels(new Int32Array([7, 8, 9, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34, 40, 41, 42, 43, 44]), House.RES_3D_MODELS_PACKAGE);
+    Renderer3D.preloadModels(new Int32Array([7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 40, 41, 42, 43, 44, 45]), House.RES_3D_MODELS_PACKAGE);
     House.weatherAreaWidth = Math.imul(GameMIDlet.screenWidth, 1024);
     House.weatherAreaHeight = Math.imul(GameMIDlet.screenHeight, 1024);
   }
@@ -3981,9 +3987,9 @@ House.$clinit = function () {
   House.prevHookX = 0;
   House.prevHookY = 0;
   House.craneTime = 0;
-  House.swingAmplitudeXByType = new Int32Array([213, 256, 298, 341, 384, 427]);
-  House.swingAmplitudeYByType = new Int32Array([85, 106, 128, 149, 170, 191]);
-  House.swingPeriodTable = new Int32Array([1670, 1700, 1650, 1600, 1550, 1500, 1450, 1400]);
+  House.swingAmplitudeXByType = new Int32Array([213, 256, 298, 341, 384, 427, 469]);
+  House.swingAmplitudeYByType = new Int32Array([85, 106, 128, 149, 170, 191, 213]);
+  House.swingPeriodTable = new Int32Array([1670, 1700, 1650, 1600, 1550, 1500, 1450, 1400, 1350, 1300]);
   House.centerX = 0;
   House.centerY = 0;
   House.camX = 0;
@@ -4194,17 +4200,17 @@ House.$clinit = function () {
   House.CAM_PITCH_LIMIT = 89;
   House.LIFE_ICON_EMPTY = 8;
   House.LIFE_ICON_BLINK = 9;
-  House.LIFE_ICON_BY_TYPE = new Int32Array([0, 2, 4, 6, 10]);        // life-icon sheet: 2 per tower (normal, losing), pink last
-  House.LIFE_ICON_LOSS_BY_TYPE = new Int32Array([1, 3, 5, 7, 11]);
+  House.LIFE_ICON_BY_TYPE = new Int32Array([0, 2, 4, 6, 10, 12]);        // life-icon sheet: 2 per tower (normal, losing), pink last
+  House.LIFE_ICON_LOSS_BY_TYPE = new Int32Array([1, 3, 5, 7, 11, 13]);
   House.MEDAL_ROOF = 4;
-  House.MEDAL_BY_TYPE = new Int32Array([0, 1, 2, 3, 5]);   // medal sheet: roof flash sits between yellow and pink
+  House.MEDAL_BY_TYPE = new Int32Array([0, 1, 2, 3, 5, 6]);   // medal sheet: roof flash sits between yellow and pink
   House.gameMode = 0;
   House.screenState = 0;
   House.roundFinishedQuick = false;
   House.roundFinishedCity = false;
   House.perfectTipActiveCity = false;
   House.perfectTipActiveQuick = false;
-  House.goalByTowerType = new Int32Array([10, 20, 30, 40, 50]);
+  House.goalByTowerType = new Int32Array([10, 20, 30, 40, 50, 60]);
   House.scoreThresholds = null;
   House.promptLines = null;
   House.loadCancelled = false;
